@@ -1,0 +1,35 @@
+#!/bin/bash
+
+WAKEUP=/proc/acpi/wakeup
+DEVLIST=/var/tmp/devices.lst
+
+get_enabled() {
+  cat $WAKEUP \
+  | grep -v ^LID \
+  | awk '/enabled/ {print $1}'
+}
+
+disable_devices() {
+  local dev
+  for dev in $(get_enabled | tee $DEVLIST); do
+    echo $dev > $WAKEUP
+  done
+}
+
+enable_devices() {
+  local dev
+  for dev in $(cat $DEVLIST 2>/dev/null); do
+    echo $dev > $WAKEUP
+  done
+}
+ 
+case "$1" in
+  hibernate) disable_devices ;;
+    suspend) disable_devices ;;
+     resume) enable_devices ;;
+       thaw) enable_devices ;;
+         ?*) echo "Unknown event: $1" >&2 ;;
+          *) echo "Specify event: suspend|resume|hibernate|thaw" >&2 ;;
+esac
+
+# Fin.
